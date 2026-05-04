@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Réservation – Fête de la Musique</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <style>
+    :root {
+      --gold: #e8b84b;
+      --gold-light: #f5d07a;
+      --deep: #0f1923;
+      --mid: #1a2d3d;
+      --accent: #3ecfb2;
+      --text: #e8e4dc;
+      --text-muted: #8a9baa;
+      --error: #ff6b6b;
+      --success: #3ecfb2;
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--deep);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Background animated notes */
+    body::before {
+      content: '♪ ♫ ♩ ♬ ♭ ♮ ♯ ♪ ♫ ♩ ♬';
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      font-size: 2rem;
+      color: rgba(232, 184, 75, 0.04);
+      letter-spacing: 3rem;
+      line-height: 5rem;
+      word-break: break-all;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .page-wrapper {
+      position: relative;
+      z-index: 1;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 40px 20px 80px;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 48px;
+      animation: fadeDown 0.8s ease both;
+    }
+
+    .header .badge {
+      display: inline-block;
+      background: var(--gold);
+      color: var(--deep);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 6px 18px;
+      border-radius: 100px;
+      margin-bottom: 20px;
+    }
+
+    .header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.2rem, 6vw, 3.4rem);
+      font-weight: 900;
+      line-height: 1.1;
+      color: #fff;
+      margin-bottom: 12px;
+    }
+
+    .header h1 span {
+      color: var(--gold);
+    }
+
+    .header .subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      font-weight: 300;
+    }
+
+    .header .event-info {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .event-info .info-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 100px;
+      padding: 8px 16px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .info-chip .icon { font-size: 1rem; }
+    .info-chip strong { color: var(--text); }
+
+    /* Tarifs */
+    .tarifs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 36px;
+      animation: fadeUp 0.8s 0.15s ease both;
+    }
+
+    .tarif-card {
+      background: rgba(232, 184, 75, 0.07);
+      border: 1px solid rgba(232, 184, 75, 0.2);
+      border-radius: var(--radius);
+      padding: 20px;
+      text-align: center;
+    }
+
+    .tarif-card .label {
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 8px;
+    }
+
+    .tarif-card .price {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .tarif-card .price span { font-size: 1rem; }
+    .tarif-card .note { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+
+    /* Form card */
+    .form-card {
+      background: var(--mid);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 20px;
+      padding: 36px 32px;
+      animation: fadeUp 0.8s 0.25s ease both;
+    }
+
+    .form-section-title {
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 20px;
+      margin-top: 32px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(232, 184, 75, 0.15);
+    }
+
+    .form-section-title:first-child { margin-top: 0; }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 500px) {
+      .form-row { grid-template-columns: 1fr; }
+      .form-card { padding: 24px 20px; }
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      letter-spacing: 0.03em;
+    }
+
+    label .required { color: var(--gold); margin-left: 3px; }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="number"],
+    textarea {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      padding: 13px 16px;
+      transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+      outline: none;
+      -moz-appearance: textfield;
+    }
+
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+    input:focus, textarea:focus {
+      border-color: var(--gold);
+      background: rgba(232, 184, 75, 0.05);
+      box-shadow: 0 0 0 3px rgba(232, 184, 75, 0.1);
+    }
+
+    input.error { border-color: var(--error) !important; }
+
+    textarea { resize: vertical; min-height: 90px; }
+
+    /* Compteurs adultes / enfants */
+    .counter-group {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .counter-group:focus-within {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(232, 184, 75, 0.1);
+    }
+
+    .counter-btn {
+      background: transparent;
+      border: none;
+      color: var(--gold);
+      font-size: 1.4rem;
+      width: 46px;
+      height: 46px;
+      cursor: pointer;
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+
+    .counter-btn:hover { background: rgba(232, 184, 75, 0.1); }
+
+    .counter-value {
+      flex: 1;
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text);
+      background: transparent;
+      border: none;
+      outline: none;
+      padding: 0;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    /* Total */
+    .total-bar {
+      background: rgba(232, 184, 75, 0.08);
+      border: 1px solid rgba(232, 184, 75, 0.2);
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 4px;
+      margin-bottom: 20px;
+    }
+
+    .total-bar .label { font-size: 0.85rem; color: var(--text-muted); }
+    .total-bar .amount {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--gold);
+    }
+
+    .total-details {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Prénoms */
+    #prenoms-section { display: none; }
+
+    #prenoms-section.visible { display: block; }
+
+    /* Alerte doublon */
+    .alert-box {
+      display: none;
+      background: rgba(255, 107, 107, 0.1);
+      border: 1px solid rgba(255, 107, 107, 0.4);
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 0.85rem;
+      color: #ff9a9a;
+      margin-bottom: 20px;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .alert-box.show { display: flex; }
+    .alert-box .alert-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+
+    /* Submit */
+    .submit-btn {
+      width: 100%;
+      background: var(--gold);
+      color: var(--deep);
+      border: none;
+      border-radius: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 16px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      position: relative;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .submit-btn:hover {
+      background: var(--gold-light);
+      box-shadow: 0 6px 24px rgba(232, 184, 75, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .submit-btn:active { transform: translateY(0); }
+    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    .submit-btn .spinner {
+      display: none;
+      width: 18px; height: 18px;
+      border: 2px solid rgba(15,25,35,0.3);
+      border-top-color: var(--deep);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      margin: 0 auto;
+    }
+
+    .submit-btn.loading .btn-text { display: none; }
+    .submit-btn.loading .spinner { display: block; }
+
+    /* Success */
+    .success-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15,25,35,0.95);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+      padding: 40px;
+    }
+
+    .success-overlay.show { display: flex; }
+
+    .success-icon {
+      font-size: 4rem;
+      margin-bottom: 24px;
+      animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+    }
+
+    .success-overlay h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    .success-overlay p { color: var(--text-muted); max-width: 400px; line-height: 1.6; }
+
+    /* Animations */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.5); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .field-error {
+      font-size: 0.78rem;
+      color: var(--error);
+      margin-top: 5px;
+      display: none;
+    }
+
+    .field-error.show { display: block; }
+  </style>
+</head>
+<body>
+
+<div class="page-wrapper">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="badge">Comité des Fêtes</div>
+    <h1>Fête de la <span>Musique</span></h1>
+    <p class="subtitle">Formulaire de réservation officiel</p>
+    <div class="event-info">
+      <div class="info-chip"><span class="icon">📅</span><strong>21 juin 2026</strong></div>
+      <div class="info-chip"><span class="icon">📍</span><strong>Saint-Fort-sur-le-Né</strong></div>
+      <div class="info-chip"><span class="icon">🎟️</span><strong>150 places</strong></div>
+    </div>
+  </div>
+
+  <!-- Tarifs -->
+  <div class="tarifs">
+    <div class="tarif-card">
+      <div class="label">Adulte</div>
+      <div class="price">15<span>€</span></div>
+      <div class="note">par personne</div>
+    </div>
+    <div class="tarif-card">
+      <div class="label">Enfant</div>
+      <div class="price">10<span>€</span></div>
+      <div class="note">jusqu'à 16 ans</div>
+    </div>
+  </div>
+
+  <!-- Formulaire -->
+  <div class="form-card">
+
+    <!-- Alerte doublon -->
+    <div class="alert-box" id="alertDoublon">
+      <span class="alert-icon">⚠️</span>
+      <div>
+        <strong>Attention :</strong> une réservation avec cette adresse mail existe déjà. Vous pouvez tout de même continuer, mais l'organisateur en sera informé.
+      </div>
+    </div>
+
+    <div class="form-section-title">Vos coordonnées</div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nom <span class="required">*</span></label>
+        <input type="text" id="nom" placeholder="Dupont" autocomplete="family-name"/>
+        <div class="field-error" id="err-nom">Ce champ est requis.</div>
+      </div>
+      <div class="form-group">
+        <label>Prénom <span class="required">*</span></label>
+        <input type="text" id="prenom" placeholder="Marie" autocomplete="given-name"/>
+        <div class="field-error" id="err-prenom">Ce champ est requis.</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Adresse e-mail <span class="required">*</span></label>
+      <input type="email" id="email" placeholder="marie.dupont@exemple.fr" autocomplete="email"/>
+      <div class="field-error" id="err-email">Veuillez saisir un email valide.</div>
+    </div>
+
+    <div class="form-section-title">Nombre de convives</div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Adultes <span class="required">*</span></label>
+        <div class="counter-group">
+          <button type="button" class="counter-btn" onclick="changeCount('adultes', -1)">−</button>
+          <span class="counter-value" id="val-adultes">1</span>
+          <button type="button" class="counter-btn" onclick="changeCount('adultes', +1)">+</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Enfants <small style="color:var(--text-muted)">(jusqu'à 16 ans)</small></label>
+        <div class="counter-group">
+          <button type="button" class="counter-btn" onclick="changeCount('enfants', -1)">−</button>
+          <span class="counter-value" id="val-enfants">0</span>
+          <button type="button" class="counter-btn" onclick="changeCount('enfants', +1)">+</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total -->
+    <div class="total-bar">
+      <div>
+        <div class="label">Total estimé</div>
+        <div class="total-details" id="total-details">1 adulte × 15€</div>
+      </div>
+      <div class="amount" id="total-amount">15 €</div>
+    </div>
+
+    <!-- Prénoms -->
+    <div id="prenoms-section">
+      <div class="form-section-title">Prénoms des convives <small style="font-size:0.65rem;color:var(--text-muted);text-transform:none;letter-spacing:0">(facultatif)</small></div>
+      <div class="form-group">
+        <label>Prénoms des autres personnes</label>
+        <textarea id="prenoms" placeholder="Ex : Pierre, Sophie, Emma..."></textarea>
+      </div>
+    </div>
+
+    <div class="form-section-title">Informations complémentaires</div>
+
+    <div class="form-group">
+      <label>Message ou demande particulière</label>
+      <textarea id="message" placeholder="Régime alimentaire, accessibilité, etc."></textarea>
+    </div>
+
+    <button class="submit-btn" id="submitBtn" onclick="submitForm()">
+      <span class="btn-text">✉️ &nbsp; Confirmer ma réservation</span>
+      <div class="spinner"></div>
+    </button>
+
+  </div>
+</div>
+
+<!-- Overlay succès -->
+<div class="success-overlay" id="successOverlay">
+  <div class="success-icon">🎵</div>
+  <h2>Réservation envoyée !</h2>
+  <p>Merci <strong id="success-prenom"></strong> ! Votre demande a bien été reçue. Vous recevrez un e-mail de confirmation, puis un second mail une fois votre réservation validée.</p>
+</div>
+
+<script>
+  // =============================================
+  // CONFIG — À MODIFIER
+  // =============================================
+  const CONFIG = {
+    // EmailJS — créez un compte sur emailjs.com
+    emailjs_public_key: "Zr2TXGaJ16f9DH2Jz",
+    emailjs_service_id: "service_lo07flj",
+    emailjs_template_confirmation: "template_rx1k3xe",  // mail à l'organisateur
+    emailjs_template_accuse: "template_w72ldla",              // accusé de réception
+
+    // Google Apps Script — URL obtenue après déploiement
+    google_script_url: "https://script.google.com/macros/s/AKfycbwJfuK8FtXkSkuHphPb-dDxCyNGqoi3GZVmNq5iWnt8TC3PvVQWys9jHRZQy6UT2nxo/exec",
+
+    // Infos événement
+    max_places: 150,
+    tarif_adulte: 15,
+    tarif_enfant: 10,
+    organisateur_email: "famyot@free.fr"
+  };
+
+  // =============================================
+  // COMPTEURS
+  // =============================================
+  let counts = { adultes: 1, enfants: 0 };
+
+  function changeCount(type, delta) {
+    const min = (type === 'adultes') ? 1 : 0;
+    counts[type] = Math.max(min, Math.min(20, counts[type] + delta));
+    document.getElementById('val-' + type).textContent = counts[type];
+    updateTotal();
+    updatePrenoms();
+  }
+
+  function updateTotal() {
+    const total = counts.adultes * CONFIG.tarif_adulte + counts.enfants * CONFIG.tarif_enfant;
+    const details = [];
+    if (counts.adultes > 0) details.push(`${counts.adultes} adulte${counts.adultes>1?'s':''} × ${CONFIG.tarif_adulte}€`);
+    if (counts.enfants > 0) details.push(`${counts.enfants} enfant${counts.enfants>1?'s':''} × ${CONFIG.tarif_enfant}€`);
+    document.getElementById('total-amount').textContent = total + ' €';
+    document.getElementById('total-details').textContent = details.join(' + ');
+  }
+
+  function updatePrenoms() {
+    const total = counts.adultes + counts.enfants;
+    const section = document.getElementById('prenoms-section');
+    if (total > 1) {
+      section.classList.add('visible');
+    } else {
+      section.classList.remove('visible');
+    }
+  }
+
+  // =============================================
+  // VÉRIFICATION DOUBLON (via Google Sheets)
+  // =============================================
+  let checkTimeout;
+  document.getElementById('email').addEventListener('input', function() {
+    clearTimeout(checkTimeout);
+    const email = this.value.trim();
+    if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) return;
+    checkTimeout = setTimeout(() => checkDoublon(email), 800);
+  });
+
+  async function checkDoublon(email) {
+    if (!CONFIG.google_script_url || CONFIG.google_script_url.startsWith('VOTRE')) return;
+    try {
+      const url = CONFIG.google_script_url + '?action=check&email=' + encodeURIComponent(email);
+      const res = await fetch(url);
+      const data = await res.json();
+      document.getElementById('alertDoublon').classList.toggle('show', data.exists === true);
+    } catch(e) { /* silencieux */ }
+  }
+
+  // =============================================
+  // VALIDATION FORMULAIRE
+  // =============================================
+  function validate() {
+    let ok = true;
+
+    const fields = [
+      { id: 'nom', errId: 'err-nom', check: v => v.trim().length > 0 },
+      { id: 'prenom', errId: 'err-prenom', check: v => v.trim().length > 0 },
+      { id: 'email', errId: 'err-email', check: v => v.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/) },
+    ];
+
+    fields.forEach(f => {
+      const val = document.getElementById(f.id).value;
+      const err = document.getElementById(f.errId);
+      const valid = f.check(val);
+      document.getElementById(f.id).classList.toggle('error', !valid);
+      err.classList.toggle('show', !valid);
+      if (!valid) ok = false;
+    });
+
+    return ok;
+  }
+
+  // =============================================
+  // SOUMISSION
+  // =============================================
+  async function submitForm() {
+    if (!validate()) return;
+
+    const btn = document.getElementById('submitBtn');
+    btn.classList.add('loading');
+    btn.disabled = true;
+
+    const nom = document.getElementById('nom').value.trim();
+    const prenom = document.getElementById('prenom').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const prenoms = document.getElementById('prenoms').value.trim();
+    const message = document.getElementById('message').value.trim();
+    const total = counts.adultes * CONFIG.tarif_adulte + counts.enfants * CONFIG.tarif_enfant;
+    const doublonAlert = document.getElementById('alertDoublon').classList.contains('show');
+    const date_resa = new Date().toLocaleString('fr-FR');
+
+    const reservationData = {
+      nom, prenom, email,
+      adultes: counts.adultes,
+      enfants: counts.enfants,
+      prenoms_convives: prenoms,
+      message,
+      total_estime: total + '€',
+      doublon: doublonAlert ? 'OUI ⚠️' : 'non',
+      date_reservation: date_resa
+    };
+
+    try {
+      // 1. Envoi vers Google Sheets
+      if (CONFIG.google_script_url && !CONFIG.google_script_url.startsWith('VOTRE')) {
+        await fetch(CONFIG.google_script_url, {
+          method: 'POST',
+          body: JSON.stringify(reservationData),
+          headers: { 'Content-Type': 'text/plain' }
+        });
+      }
+
+      // 2. EmailJS — Accusé de réception à l'utilisateur
+      if (!CONFIG.emailjs_public_key.startsWith('VOTRE')) {
+        emailjs.init(CONFIG.emailjs_public_key);
+
+        await emailjs.send(CONFIG.emailjs_service_id, CONFIG.emailjs_template_accuse, {
+          to_email: email,
+          to_name: prenom + ' ' + nom,
+          adultes: counts.adultes,
+          enfants: counts.enfants,
+          total: total + '€',
+          prenoms_convives: prenoms || 'Non renseignés',
+          message: message || 'Aucun'
+        });
+
+        // 3. EmailJS — Notification à l'organisateur
+        await emailjs.send(CONFIG.emailjs_service_id, CONFIG.emailjs_template_confirmation, {
+          to_email: CONFIG.organisateur_email,
+          nom_complet: prenom + ' ' + nom,
+          email_reservant: email,
+          adultes: counts.adultes,
+          enfants: counts.enfants,
+          total: total + '€',
+          prenoms_convives: prenoms || 'Non renseignés',
+          message: message || 'Aucun',
+          doublon: reservationData.doublon,
+          date_reservation: date_resa,
+          // Liens de validation (gérés côté Google Apps Script)
+          lien_valider: CONFIG.google_script_url + '?action=valider&email=' + encodeURIComponent(email) + '&nom=' + encodeURIComponent(prenom + ' ' + nom),
+          lien_refuser: CONFIG.google_script_url + '?action=refuser&email=' + encodeURIComponent(email) + '&nom=' + encodeURIComponent(prenom + ' ' + nom)
+        });
+      }
+
+      // Succès
+      document.getElementById('success-prenom').textContent = prenom;
+      document.getElementById('successOverlay').classList.add('show');
+
+    } catch(err) {
+      console.error(err);
+      alert('Une erreur est survenue. Veuillez réessayer ou contacter l\'organisateur.');
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    }
+  }
+</script>
+
+</body>
+</html>
