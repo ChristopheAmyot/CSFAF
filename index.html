@@ -672,14 +672,27 @@
     };
 
     try {
-      // 1. Envoi vers Google Sheets (mode no-cors obligatoire depuis un navigateur)
-      fetch(CONFIG.google_script_url, {
-        method: 'POST',
-        mode: 'no-cors',
-        body: JSON.stringify(reservationData)
+      // 1. Envoi vers Google Sheets via paramètres GET (contourne les restrictions CORS)
+      const params = new URLSearchParams({
+        action: 'submit',
+        nom: reservationData.nom,
+        prenom: reservationData.prenom,
+        email: reservationData.email,
+        adultes: reservationData.adultes,
+        enfants: reservationData.enfants,
+        prenoms_convives: reservationData.prenoms_convives || '',
+        total_estime: reservationData.total_estime || '',
+        message: reservationData.message || '',
+        doublon: reservationData.doublon || 'non',
+        date_reservation: reservationData.date_reservation
       });
 
-      // Pause pour laisser Apps Script traiter et envoyer le mail avec boutons Valider/Refuser
+      await fetch(CONFIG.google_script_url + '?' + params.toString(), {
+        method: 'GET',
+        mode: 'no-cors'
+      });
+
+      // Pause pour laisser Apps Script traiter et envoyer le mail
       await new Promise(r => setTimeout(r, 2000));
 
       // 2. EmailJS — Accusé de réception à l'utilisateur UNIQUEMENT
