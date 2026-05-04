@@ -672,46 +672,28 @@
     };
 
     try {
-      // 1. Envoi vers Google Sheets
-      if (CONFIG.google_script_url && !CONFIG.google_script_url.startsWith('VOTRE')) {
-        await fetch(CONFIG.google_script_url, {
-          method: 'POST',
-          body: JSON.stringify(reservationData),
-          headers: { 'Content-Type': 'text/plain' }
-        });
-      }
+      // 1. Envoi vers Google Sheets (mode no-cors obligatoire depuis un navigateur)
+      fetch(CONFIG.google_script_url, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify(reservationData)
+      });
 
-      // 2. EmailJS — Accusé de réception à l'utilisateur
-      if (!CONFIG.emailjs_public_key.startsWith('VOTRE')) {
-        emailjs.init(CONFIG.emailjs_public_key);
+      // Pause pour laisser Apps Script traiter et envoyer le mail avec boutons Valider/Refuser
+      await new Promise(r => setTimeout(r, 2000));
 
-        await emailjs.send(CONFIG.emailjs_service_id, CONFIG.emailjs_template_accuse, {
-          to_email: email,
-          to_name: prenom + ' ' + nom,
-          adultes: counts.adultes,
-          enfants: counts.enfants,
-          total: total + '€',
-          prenoms_convives: prenoms || 'Non renseignés',
-          message: message || 'Aucun'
-        });
-
-        // 3. EmailJS — Notification à l'organisateur
-        await emailjs.send(CONFIG.emailjs_service_id, CONFIG.emailjs_template_confirmation, {
-          to_email: CONFIG.organisateur_email,
-          nom_complet: prenom + ' ' + nom,
-          email_reservant: email,
-          adultes: counts.adultes,
-          enfants: counts.enfants,
-          total: total + '€',
-          prenoms_convives: prenoms || 'Non renseignés',
-          message: message || 'Aucun',
-          doublon: reservationData.doublon,
-          date_reservation: date_resa,
-          // Liens de validation (gérés côté Google Apps Script)
-          lien_valider: CONFIG.google_script_url + '?action=valider&email=' + encodeURIComponent(email) + '&nom=' + encodeURIComponent(prenom + ' ' + nom),
-          lien_refuser: CONFIG.google_script_url + '?action=refuser&email=' + encodeURIComponent(email) + '&nom=' + encodeURIComponent(prenom + ' ' + nom)
-        });
-      }
+      // 2. EmailJS — Accusé de réception à l'utilisateur UNIQUEMENT
+      // Le mail à l'organisateur avec boutons est géré par Google Apps Script
+      emailjs.init(CONFIG.emailjs_public_key);
+      await emailjs.send(CONFIG.emailjs_service_id, CONFIG.emailjs_template_accuse, {
+        to_email: email,
+        to_name: prenom + ' ' + nom,
+        adultes: counts.adultes,
+        enfants: counts.enfants,
+        total: total + '€',
+        prenoms_convives: prenoms || 'Non renseignés',
+        message: message || 'Aucun'
+      });
 
       // Succès
       document.getElementById('success-prenom').textContent = prenom;
